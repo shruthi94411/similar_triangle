@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avengers Triangle Quest</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- Basic Setup & Theming --- */
+        :root {
+            --background-start: #0f0c29;
+            --background-mid: #302b63;
+            --background-end: #24243e;
+            --glass-bg: rgba(36, 36, 62, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glow-primary: #00e5ff;
+            --glow-secondary: #ff00c1;
+            --glow-success: #00ff88;
+            --glow-error: #ff3333;
+            --text-light: #f0f0f0;
+            --text-dark: #222;
+            --font-title: 'Bangers', cursive;
+            --font-body: 'Inter', sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: linear-gradient(135deg, var(--background-start), var(--background-mid), var(--background-end));
+            color: var(--text-light);
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100vh;
+            max-width: 1400px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* --- Glassmorphism UI Component --- */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* --- Header --- */
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 30px;
+            flex-shrink: 0;
+            position: relative;
+        }
+        #header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 5%;
+            width: 90%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--glow-primary), transparent);
+            opacity: 0.5;
+        }
+
+        #game-title {
+            font-family: var(--font-title);
+            font-size: 3rem;
+            letter-spacing: 3px;
+            text-shadow: 0 0 5px var(--glow-primary), 0 0 10px var(--glow-primary);
+            animation: pulse-glow 3s infinite alternate;
+        }
+
+        .info-box {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--glass-bg);
+            padding: 5px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+        }
+        .info-box span {
+            color: var(--glow-primary);
+            font-weight: bold;
+            text-shadow: 0 0 5px var(--glow-primary);
+        }
+
+        /* --- Main Content Area --- */
+        #main-content {
+            display: flex;
+            flex-grow: 1;
+            gap: 20px;
+            height: calc(100% - 100px); /* Adjust based on header height */
+        }
+        
+        /* --- Game Board --- */
+        #game-board {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        /* --- Sidebar --- */
+        #sidebar {
+            width: 350px;
+            flex-shrink: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .sidebar-section {
+            padding: 15px;
+        }
+
+        .sidebar-title {
+            font-family: var(--font-title);
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            text-align: center;
+            margin-bottom: 15px;
+            text-shadow: 0 0 5px var(--glow-secondary);
+        }
+
+        /* Comparison Zone */
+        #comparison-zone {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            height: 150px;
+        }
+
+        .comparison-slot {
+            border: 2px dashed var(--glow-primary);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+            animation: pulse-border 2s infinite ease-in-out;
+        }
+        .comparison-slot.filled {
+            border-style: solid;
+            background-color: rgba(0, 229, 255, 0.1);
+            animation: none;
+            transform: scale(1.05);
+        }
+
+        /* Avengers Picture Reveal */
+        #picture-reveal {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 5px;
+            padding: 5px;
+            border-radius: 10px;
+            background-size: cover;
+            background-position: center;
+            background-image: url('https://images.unsplash.com/photo-1635805737704-c97a6cfb0024?q=80&w=1974&auto=format&fit=crop'); /* Replace with any Avengers image URL */
+            perspective: 800px;
+        }
+        .picture-tile {
+            background-color: var(--background-mid);
+            border-radius: 5px;
+            transition: transform 0.8s ease, opacity 0.8s ease;
+            opacity: 1;
+            transform: rotateY(0) scale(1);
+        }
+        .picture-tile.hidden {
+            opacity: 0;
+            transform: rotateY(180deg) scale(0.5);
+        }
+
+        /* Game Controls */
+        #game-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 12px;
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-light);
+            background: linear-gradient(45deg, var(--glow-secondary), var(--glow-primary));
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 3px rgba(0,0,0,0.5);
+            box-shadow: 0 0 10px 0 var(--glow-primary), inset 0 0 5px rgba(255,255,255,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn:hover:not(:disabled)::before {
+            left: 100%;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px 0 var(--glow-primary);
+        }
+        .btn:disabled {
+            cursor: not-allowed;
+            filter: grayscale(0.7);
+            opacity: 0.5;
+        }
+
+        /* --- Triangles --- */
+        .triangle-wrapper {
+            position: absolute;
+            cursor: grab;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: float 4s infinite ease-in-out;
+        }
+        .triangle-wrapper.dragging {
+            cursor: grabbing;
+            z-index: 1000;
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 15px var(--glow-primary));
+            animation: none;
+        }
+        .triangle-svg {
+            overflow: visible; /* Prevent clipping */
+        }
+        .triangle-path {
+            stroke-width: 4;
+            stroke: var(--glow-primary);
+            fill: var(--glass-bg);
+            transition: all 0.3s ease;
+        }
+        .triangle-wrapper:hover .triangle-path {
+            stroke: var(--glow-secondary);
+            fill: rgba(48, 43, 99, 0.7);
+        }
+        
+        .triangle-text {
+            font-family: var(--font-body);
+            fill: var(--text-light);
+            font-size: 16px;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+            text-shadow: 0 0 3px var(--background-start);
+        }
+        
+        /* --- Animations --- */
+        @keyframes pulse-glow {
+            from { text-shadow: 0 0 5px var(--glow-primary), 0 0 10px var(--glow-primary); }
+            to { text-shadow: 0 0 10px var(--glow-primary), 0 0 20px var(--glow-primary); }
+        }
+        @keyframes pulse-border {
+            0%, 100% { border-color: var(--glow-primary); opacity: 0.7; }
+            50% { border-color: var(--glow-secondary); opacity: 1; }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .flash-green {
+            animation: flash-green 0.7s ease;
+        }
+        @keyframes flash-green {
+            0%, 100% { box-shadow: none; border-color: var(--glow-primary); }
+            50% { 
+                box-shadow: 0 0 30px 10px var(--glow-success); 
+                border-color: var(--glow-success);
+            }
+        }
+
+        /* --- Level 0 Specific UI --- */
+        #level0-container {
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            padding: 20px;
+        }
+        #level0-triangles {
+            display: flex;
+            gap: 50px;
+            justify-content: center;
+            align-items: center;
+        }
+        #level0-controls {
+            display: flex;
+            gap: 20px;
+        }
+        .level0-btn {
+            width: 180px;
+            font-size: 1.2rem;
+        }
+
+        /* --- Modals --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            padding: 40px;
+            max-width: 800px;
+            text-align: center;
+            position: relative; /* For corner brackets */
+        }
+        
+        /* futuristic corner brackets */
+        .modal-content::before,
+        .modal-content::after {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-color: var(--glow-primary);
+            border-style: solid;
+            transition: all 0.3s ease;
+        }
+        .modal-content::before {
+            top: -5px;
+            left: -5px;
+            border-width: 3px 0 0 3px;
+            border-top-left-radius: 20px;
+        }
+        .modal-content::after {
+            bottom: -5px;
+            right: -5px;
+            border-width: 0 3px 3px 0;
+            border-bottom-right-radius: 20px;
+        }
+
+        .modal-content h2 {
+            font-family: var(--font-title);
+            font-size: 3rem;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            color: var(--glow-primary);
+        }
+        .modal-content > p {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .modal-content .btn {
+            font-size: 1.2rem;
+            margin: 0 10px;
+        }
+        #level-selection {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .level-card {
+            background: rgba(15, 12, 41, 0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .level-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--glow-primary), transparent);
+            opacity: 0.2;
+            transition: left 0.5s ease;
+        }
+
+        .level-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.5);
+            border-color: var(--glow-primary);
+        }
+
+        .level-card:hover::before {
+            left: 100%;
+        }
+
+        .level-icon {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            background-color: var(--glass-bg);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid var(--glass-border);
+        }
+        .level-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--glow-primary);
+        }
+
+        .level-details h4 {
+            font-family: var(--font-body);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-light);
+            margin: 0 0 5px 0;
+        }
+        .level-details p {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            opacity: 0.8;
+            margin: 0;
+        }
+        
+        /* --- Feedback Message --- */
+        #feedback-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            padding: 20px 40px;
+            font-family: var(--font-title);
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            border-radius: 15px;
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.5);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1500;
+            pointer-events: none;
+        }
+        #feedback-message.show {
+            opacity: 1;
+            transform: translate(-50%, -70%) scale(1);
+        }
+        #feedback-message.success {
+            background-color: var(--glow-success);
+            color: var(--text-dark);
+            text-shadow: 0 0 5px #fff;
+        }
+        #feedback-message.error {
+            background-color: var(--glow-error);
+            color: var(--text-light);
+            text-shadow: 0 0 5px #000;
+        }
+        
+        /* --- Responsive Design --- */
+        @media (max-width: 1200px) {
+            #sidebar {
+                width: 300px;
+            }
+            #game-title {
+                font-size: 2.5rem;
+            }
+        }
+        @media (max-width: 992px) {
+            #main-content {
+                flex-direction: column;
+                height: auto;
+            }
+            #game-board {
+                height: 50vh;
+                min-height: 400px;
+            }
+            #sidebar {
+                width: 100%;
+                flex-direction: row;
+                gap: 15px;
+                height: auto;
+            }
+            #comparison-zone { height: 120px; }
+            #picture-reveal { flex-grow: 0; width: 200px; }
+            #game-controls { flex-grow: 1; }
+        }
+        @media (max-width: 768px) {
+            body { overflow: auto; }
+            #game-container { padding: 10px; }
+            #header { flex-direction: column; gap: 10px; padding: 10px; }
+            #game-title { font-size: 2rem; }
+            .info-box { font-size: 1.2rem; }
+            #sidebar { flex-direction: column; }
+            #picture-reveal { width: 100%; height: 300px; }
+        }
+        @media (max-width: 850px) {
+            #level-selection {
+                grid-template-columns: 1fr;
+            }
+            .modal-content {
+                max-width: 90vw;
+                padding: 20px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Header -->
+        <header id="header" class="glass-panel">
+            <h1 id="game-title">Avengers Triangle Quest</h1>
+            <div id="level-display" class="info-box">LEVEL: <span>-</span></div>
+            <div id="score-display" class="info-box">SCORE: <span>0</span></div>
+        </header>
+
+        <!-- Main Content (Board + Sidebar) -->
+        <main id="main-content">
+            <div id="game-board" class="glass-panel">
+                 <div id="feedback-message"></div>
+            </div>
+
+            <aside id="sidebar">
+                <div id="sidebar-main-content" class="glass-panel" style="display: flex; flex-direction: column; width: 100%; height: 100%; padding: 20px; gap: 20px;">
+                    <div id="comparison-section" class="sidebar-section">
+                        <h2 class="sidebar-title">Comparison Zone</h2>
+                        <div id="comparison-zone">
+                            <div class="comparison-slot" data-slot="0"></div>
+                            <div class="comparison-slot" data-slot="1"></div>
+                        </div>
+                    </div>
+
+                    <div id="avengers-reveal-section" class="sidebar-section" style="flex-grow: 1; display: flex; flex-direction: column;">
+                        <h2 class="sidebar-title">Mission Progress</h2>
+                        <div id="picture-reveal"></div>
+                    </div>
+
+                    <div class="sidebar-section">
+                        <h2 class="sidebar-title">HQ Controls</h2>
+                        <div id="game-controls">
+                            <button id="hint-btn" class="btn">Get Hint (-2)</button>
+                            <button id="reveal-btn" class="btn">Reveal Answers</button>
+                            <button id="change-level-btn" class="btn" style="grid-column: 1 / -1;">Change Level</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level 0 Specific UI -->
+                <div id="level0-container" class="glass-panel">
+                    <h2 class="sidebar-title">Identify The Relationship</h2>
+                    <div id="level0-triangles"></div>
+                    <div id="level0-controls">
+                        <button class="btn level0-btn" data-answer="similar">Similar</button>
+                        <button class="btn level0-btn" data-answer="not-similar">Not Similar</button>
+                        <button class="btn level0-btn" data-answer="not-enough-data">Not Enough Data</button>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Level Selection Modal -->
+    <div id="level-select-modal" class="modal-overlay visible">
+        <div class="modal-content glass-panel">
+            <h2>Mission Briefing</h2>
+            <p>Select your training level, Agent. Each level will test a different aspect of geometric similarity. Good luck.</p>
+            <div id="level-selection">
+                <div class="level-card" data-level="0">
+                    <div class="level-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 22h20L12 2z"/></svg>
+                    </div>
+                    <div class="level-details">
+                        <h4>Level 0: The Basics</h4>
+                        <p>Intro to similarity concepts.</p>
+                    </div>
+                </div>
+                <div class="level-card" data-level="1">
+                    <div class="level-icon">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.19 5.19-8.71 17.66a1 1 0 0 1-1.41 0l-4.24-4.24a1 1 0 0 1 1.41-1.41l3.53 3.53L19.78 3.78a1 1 0 0 1 1.41 1.41z"/><path d="m22 2-7.5 7.5"/><path d="M3.22 12.22 12 21l8.78-8.78"/><path d="M12 21V3"/></svg>
+                    </div>
+                    <div class="level-details">
+                        <h4>Level 1: Angle & Side Power</h4>
+                        <p>Test your AAA & SSS skills.</p>
+                    </div>
+                </div>
+                <div class="level-card" data-level="2">
+                    <div class="level-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V3l16 9-16 9z"/><path d="M4 3h1"/><path d="M4 21h1"/><path d="M9 7.5l-5 4.5"/></svg>
+                    </div>
+                    <div class="level-details">
+                        <h4>Level 2: The SAS Challenge</h4>
+                        <p>Master the Side-Angle-Side rule.</p>
+                    </div>
+                </div>
+                <div class="level-card" data-level="3">
+                    <div class="level-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a2 2 0 1 0 4 0 2 2 0 0 0-4 0z"/><path d="M10.9 2.1 6.5 4.8a2 2 0 0 0-1.3 2.5l1.3 4.4a2 2 0 0 0 2.5 1.3l4.4-1.3a2 2 0 0 0 2.5-1.3l1.3-4.4a2 2 0 0 0-1.3-2.5l-4.4-1.3a2 2 0 0 0-1.3 2.5z"/></svg>
+                    </div>
+                    <div class="level-details">
+                        <h4>Level 3: Infinity Gauntlet</h4>
+                        <p>A mix of all similarity criteria.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Win/End Level Modal -->
+    <div id="end-level-modal" class="modal-overlay">
+        <div class="modal-content glass-panel">
+            <h2 id="end-level-title">Mission Complete!</h2>
+            <p id="end-level-message">Excellent work, Agent. You've mastered this challenge. What's your next move?</p>
+            <button id="next-level-btn" class="btn">Next Level</button>
+            <button id="restart-level-btn" class="btn">Replay Level</button>
+            <button id="main-menu-btn" class="btn">Main Menu</button>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const gameBoard = document.getElementById('game-board');
+            const sidebarMainContent = document.getElementById('sidebar-main-content');
+            const level0Container = document.getElementById('level0-container');
+            const scoreDisplay = document.querySelector('#score-display span');
+            const levelDisplay = document.querySelector('#level-display span');
+            const comparisonSlots = document.querySelectorAll('.comparison-slot');
+            const pictureReveal = document.getElementById('picture-reveal');
+            const feedbackMessage = document.getElementById('feedback-message');
+
+            const levelSelectModal = document.getElementById('level-select-modal');
+            const endLevelModal = document.getElementById('end-level-modal');
+            
+            // Buttons
+            const hintBtn = document.getElementById('hint-btn');
+            const revealBtn = document.getElementById('reveal-btn');
+            const changeLevelBtn = document.getElementById('change-level-btn');
+            const nextLevelBtn = document.getElementById('next-level-btn');
+            const restartLevelBtn = document.getElementById('restart-level-btn');
+            const mainMenuBtn = document.getElementById('main-menu-btn');
+            
+            // --- Game State ---
+            let gameState = {
+                currentLevel: -1,
+                score: 0,
+                triangles: [],
+                comparison: [null, null],
+                draggingElement: null,
+                offsetX: 0,
+                offsetY: 0,
+                placedTriangles: [],
+                correctPairs: 0,
+                totalPairs: 0,
+                level0CurrentPair: null,
+            };
+
+            const LEVEL_CONFIG = {
+                0: { name: "The Basics", types: ['AAA', 'SSS', 'SAS', 'Not Similar', 'Not Enough Data'] },
+                1: { name: "Angle & Side Power", types: ['AAA', 'SSS'], distractors: 2, pairs: 5 },
+                2: { name: "The SAS Challenge", types: ['SAS'], distractors: 2, pairs: 6 },
+                3: { name: "Infinity Gauntlet", types: ['AAA', 'SSS', 'SAS'], distractors: 4, pairs: 7 },
+            };
+            
+            // --- Game Setup ---
+            
+            function init() {
+                // Populate picture reveal tiles
+                for (let i = 0; i < 16; i++) {
+                    const tile = document.createElement('div');
+                    tile.classList.add('picture-tile');
+                    tile.dataset.tileId = i;
+                    pictureReveal.appendChild(tile);
+                }
+                
+                // Event Listeners for modals
+                levelSelectModal.addEventListener('click', (e) => {
+                    const card = e.target.closest('.level-card[data-level]');
+                    if (card) {
+                        const level = parseInt(card.dataset.level);
+                        levelSelectModal.classList.remove('visible');
+                        startLevel(level);
+                    }
+                });
+
+                mainMenuBtn.addEventListener('click', showLevelSelect);
+                changeLevelBtn.addEventListener('click', showLevelSelect);
+                restartLevelBtn.addEventListener('click', () => {
+                    endLevelModal.classList.remove('visible');
+                    startLevel(gameState.currentLevel);
+                });
+                nextLevelBtn.addEventListener('click', () => {
+                    endLevelModal.classList.remove('visible');
+                    if(gameState.currentLevel < 3) {
+                       startLevel(gameState.currentLevel + 1);
+                    } else {
+                       showLevelSelect();
+                    }
+                });
+
+                hintBtn.addEventListener('click', useHint);
+                revealBtn.addEventListener('click', revealAllAnswers);
+
+                // Setup Level 0 controls
+                document.getElementById('level0-controls').addEventListener('click', e => {
+                    if (e.target.matches('.level0-btn')) {
+                        checkLevel0Answer(e.target.dataset.answer);
+                    }
+                });
+            }
+
+            function startLevel(level) {
+                gameState.currentLevel = level;
+                gameState.score = 0;
+                gameState.triangles = [];
+                gameState.comparison = [null, null];
+                gameState.placedTriangles = [];
+                gameState.correctPairs = 0;
+                
+                updateScore(0);
+                levelDisplay.textContent = `${level}: ${LEVEL_CONFIG[level].name}`;
+                resetUI();
+
+                if (level === 0) {
+                    setupLevel0();
+                } else {
+                    setupStandardLevel(level);
+                }
+            }
+
+            function resetUI() {
+                gameBoard.innerHTML = '<div id="feedback-message"></div>'; // Keep feedback message
+                comparisonSlots.forEach(slot => {
+                    slot.innerHTML = '';
+                    slot.classList.remove('filled');
+                });
+                document.querySelectorAll('.picture-tile').forEach(t => t.classList.remove('hidden'));
+                hintBtn.disabled = false;
+                revealBtn.disabled = false;
+            }
+
+            function showLevelSelect() {
+                endLevelModal.classList.remove('visible');
+                levelSelectModal.classList.add('visible');
+            }
+
+            // --- Level Logic ---
+
+            function setupLevel0() {
+                sidebarMainContent.style.display = 'none';
+                level0Container.style.display = 'flex';
+                generateLevel0Pair();
+            }
+            
+            function setupStandardLevel(level) {
+                sidebarMainContent.style.display = 'flex';
+                level0Container.style.display = 'none';
+                
+                const config = LEVEL_CONFIG[level];
+                gameState.triangles = generateTriangleData(config);
+                gameState.totalPairs = config.pairs;
+                renderTriangles(gameState.triangles);
+            }
+
+            // --- Triangle Generation (Data) ---
+
+            function generateTriangleData(config) {
+                const triangles = [];
+                let pairId = 0;
+
+                // Generate pairs
+                for (let i = 0; i < config.pairs; i++) {
+                    const type = config.types[Math.floor(Math.random() * config.types.length)];
+                    const [t1, t2] = createSimilarPair(type, pairId);
+                    triangles.push(t1, t2);
+                    pairId++;
+                }
+
+                // Generate distractors
+                for (let i = 0; i < config.distractors; i++) {
+                    triangles.push(createDistractor(config.types, pairId));
+                    pairId++;
+                }
+                
+                return shuffleArray(triangles);
+            }
+            
+            function createSimilarPair(type, pairId) {
+                const scale = 1.2 + Math.random(); // Scale factor
+                const t1 = { id: pairId * 2, pairId: pairId, type: type, isDistractor: false };
+                const t2 = { id: pairId * 2 + 1, pairId: pairId, type: type, isDistractor: false };
+
+                switch (type) {
+                    case 'SSS':
+                        let sides1;
+                        do {
+                           sides1 = [rand(30, 70), rand(40, 80), rand(50, 90)];
+                        } while (sides1[0] + sides1[1] <= sides1[2] || sides1[0] + sides1[2] <= sides1[1] || sides1[1] + sides1[2] <= sides1[0]);
+                        t1.sides = sides1.map(s => Math.round(s));
+                        t2.sides = sides1.map(s => Math.round(s * scale));
+                        break;
+                    case 'SAS':
+                        t1.sides = [rand(40, 80), rand(50, 90)];
+                        t1.angles = [null, rand(30, 120), null];
+                        t2.sides = t1.sides.map(s => Math.round(s * scale));
+                        t2.angles = [null, t1.angles[1], null];
+                        break;
+                    case 'AAA':
+                        const a1 = rand(30, 80);
+                        const a2 = rand(30, 180 - a1 - 10);
+                        const a3 = 180 - a1 - a2;
+                        t1.angles = [a1, a2, a3].map(a => Math.round(a));
+                        t2.angles = t1.angles;
+                        break;
+                }
+                return [t1, t2];
+            }
+
+            function createDistractor(types, id) {
+                const distractor = { id: id * 2, pairId: -1, isDistractor: true };
+                const type = types[Math.floor(Math.random() * types.length)];
+                distractor.type = type;
+
+                 switch (type) {
+                    case 'SSS':
+                         distractor.sides = [rand(35, 75), rand(45, 85), rand(55, 95)];
+                         break;
+                    case 'SAS':
+                        distractor.sides = [rand(45, 85), rand(55, 95)];
+                        distractor.angles = [null, rand(30, 120), null];
+                        break;
+                    case 'AAA':
+                         const a1 = rand(35, 85);
+                         const a2 = rand(35, 180 - a1 - 10);
+                         distractor.angles = [a1, a2, 180 - a1 - a2].map(a => Math.round(a));
+                         break;
+                }
+                return distractor;
+            }
+
+            function generateLevel0Pair() {
+                const container = document.getElementById('level0-triangles');
+                container.innerHTML = '';
+                const type = LEVEL_CONFIG[0].types[Math.floor(Math.random() * LEVEL_CONFIG[0].types.length)];
+                let t1_data, t2_data;
+                gameState.level0CurrentPair = { type };
+
+                if (type === 'Not Similar') {
+                    [t1_data] = createSimilarPair('SSS', -1);
+                    [t2_data] = createSimilarPair('AAA', -2);
+                    t2_data.sides = [rand(30,100), rand(30,100), rand(30,100)]; // Give random sides
+                } else if (type === 'Not Enough Data') {
+                     t1_data = { sides: [rand(40,80), rand(50,90), null], angles: [null, null, null] };
+                     t2_data = { sides: [rand(40,80), rand(50,90), null], angles: [null, null, null] };
+                } else { // Similar pair
+                    [t1_data, t2_data] = createSimilarPair(type, 0);
+                }
+
+                const t1_svg = createTriangleSVG(t1_data, 150, true);
+                const t2_svg = createTriangleSVG(t2_data, 150, true);
+                
+                const wrapper1 = document.createElement('div');
+                wrapper1.appendChild(t1_svg);
+                const wrapper2 = document.createElement('div');
+                wrapper2.appendChild(t2_svg);
+
+                container.append(wrapper1, wrapper2);
+            }
+
+            // --- Triangle Rendering (Visual) ---
+
+            function renderTriangles(triangles) {
+                const boardRect = gameBoard.getBoundingClientRect();
+                
+                triangles.forEach((tri, index) => {
+                    const wrapper = document.createElement('div');
+                    wrapper.classList.add('triangle-wrapper');
+                    wrapper.dataset.id = tri.id;
+                    // Add staggered animation delay
+                    wrapper.style.animationDelay = `${(index * 0.1) % 2}s`;
+
+                    const svg = createTriangleSVG(tri, 100);
+                    wrapper.appendChild(svg);
+                    
+                    const svgRect = svg.getBoundingClientRect();
+                    tri.width = svgRect.width;
+                    tri.height = svgRect.height;
+
+                    placeWithoutOverlap(wrapper, tri, boardRect);
+
+                    gameBoard.appendChild(wrapper);
+                    addDragListeners(wrapper);
+                });
+            }
+
+            function createTriangleSVG(tri, baseSize = 100, isLevel0 = false) {
+                let p = [{x:0, y:0}, {x:0, y:0}, {x:0, y:0}];
+                let sideLabels = ["", "", ""];
+                let angleLabels = ["", "", ""];
+                let a=baseSize, b, c, alpha, beta, gamma;
+
+                if (tri.sides) { // SSS or SAS
+                    c = tri.sides[0];
+                    b = tri.sides[1];
+                    a = tri.sides[2] || null;
+
+                    const maxSide = Math.max(...tri.sides.filter(s=>s));
+                    const scale = baseSize / maxSide;
+                    c *= scale;
+                    b *= scale;
+                    if (a) a *= scale;
+
+                    p[0] = { x: 0, y: 0 };
+                    p[1] = { x: c, y: 0 };
+
+                    if (tri.type === 'SAS') {
+                        gamma = tri.angles[1] * Math.PI / 180;
+                    } else { // SSS
+                        // Law of Cosines to find angle gamma
+                        gamma = Math.acos((a*a + b*b - c*c) / (2*a*b));
+                        if(isNaN(gamma)) gamma = Math.acos((c*c + b*b - a*a) / (2*c*b)); // Try another angle
+                        if(isNaN(gamma)) gamma = Math.PI/3; // Fallback
+                    }
+                    p[2] = { x: b * Math.cos(gamma), y: -b * Math.sin(gamma) };
+
+                } else { // AAA
+                    alpha = tri.angles[0] * Math.PI / 180;
+                    beta = tri.angles[1] * Math.PI / 180;
+                    c = baseSize;
+                    b = c * Math.sin(beta) / Math.sin(Math.PI - alpha - beta);
+                    p[0] = { x: 0, y: 0 };
+                    p[1] = { x: c, y: 0 };
+                    p[2] = { x: b * Math.cos(alpha), y: -b * Math.sin(alpha) };
+                }
+
+                const points = [p[0], p[1], p[2]];
+                const xs = points.map(pt => pt.x);
+                const ys = points.map(pt => pt.y);
+                const minX = Math.min(...xs);
+                const maxX = Math.max(...xs);
+                const minY = Math.min(...ys);
+                const maxY = Math.max(...ys);
+
+                const width = maxX - minX + 40;
+                const height = maxY - minY + 40;
+                const offsetX = -minX + 20;
+                const offsetY = -minY + 20;
+
+                const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svg.setAttribute('class', 'triangle-svg');
+                svg.setAttribute('width', width);
+                svg.setAttribute('height', height);
+                svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+                
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute('class', 'triangle-path');
+                const pathData = `M ${p[0].x + offsetX} ${p[0].y + offsetY} L ${p[1].x + offsetX} ${p[1].y + offsetY} L ${p[2].x + offsetX} ${p[2].y + offsetY} Z`;
+                path.setAttribute('d', pathData);
+                svg.appendChild(path);
+
+                // Add labels
+                if (!isLevel0) {
+                    const textPositions = getTextPositions(p, offsetX, offsetY);
+                    if(tri.sides) {
+                        tri.sides.forEach((side, i) => {
+                            if (side) {
+                                svg.appendChild(createText(side, textPositions.sides[i].x, textPositions.sides[i].y));
+                            }
+                        });
+                    }
+                     if(tri.angles) {
+                        tri.angles.forEach((angle, i) => {
+                            if (angle) {
+                                svg.appendChild(createText(`${angle}°`, textPositions.angles[i].x, textPositions.angles[i].y));
+                            }
+                        });
+                    }
+                }
+                
+                return svg;
+            }
+            
+            function getTextPositions(p, ox, oy) {
+                // Midpoints of sides
+                const mid01 = { x: (p[0].x+p[1].x)/2 + ox, y: (p[0].y+p[1].y)/2 + oy };
+                const mid12 = { x: (p[1].x+p[2].x)/2 + ox, y: (p[1].y+p[2].y)/2 + oy };
+                const mid20 = { x: (p[2].x+p[0].x)/2 + ox, y: (p[2].y+p[0].y)/2 + oy };
+                // A bit inside from vertices for angles
+                const center = { x: (p[0].x+p[1].x+p[2].x)/3, y: (p[0].y+p[1].y+p[2].y)/3 };
+                const angle0 = { x: p[0].x*0.8 + center.x*0.2 + ox, y: p[0].y*0.8 + center.y*0.2 + oy };
+                const angle1 = { x: p[1].x*0.8 + center.x*0.2 + ox, y: p[1].y*0.8 + center.y*0.2 + oy };
+                const angle2 = { x: p[2].x*0.8 + center.x*0.2 + ox, y: p[2].y*0.8 + center.y*0.2 + oy };
+
+                return { sides: [mid01, mid12, mid20], angles: [angle0, angle1, angle2] };
+            }
+
+            function createText(content, x, y) {
+                 const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                 text.setAttribute('class', 'triangle-text');
+                 text.setAttribute('x', x);
+                 text.setAttribute('y', y);
+                 text.textContent = content;
+                 return text;
+            }
+
+            function placeWithoutOverlap(element, tri, boardRect) {
+                let placed = false;
+                let attempts = 0;
+                while (!placed && attempts < 100) {
+                    const x = Math.random() * (boardRect.width - tri.width - 20) + 10;
+                    const y = Math.random() * (boardRect.height - tri.height - 20) + 10;
+                    element.style.left = `${x}px`;
+                    element.style.top = `${y}px`;
+                    
+                    const newRect = { x, y, width: tri.width, height: tri.height };
+                    let collision = false;
+                    for (const placed of gameState.placedTriangles) {
+                        if (rectsOverlap(newRect, placed.rect)) {
+                            collision = true;
+                            break;
+                        }
+                    }
+                    if (!collision) {
+                        tri.x = x;
+                        tri.y = y;
+                        gameState.placedTriangles.push({ element, rect: newRect, tri });
+                        placed = true;
+                    }
+                    attempts++;
+                }
+                 if (!placed) { // Fallback if no position found
+                    element.style.left = `${rand(10, 50)}px`;
+                    element.style.top = `${rand(10, 50)}px`;
+                }
+            }
+            
+            // --- Drag and Drop ---
+            
+            function addDragListeners(element) {
+                element.addEventListener('mousedown', dragStart);
+                element.addEventListener('touchstart', dragStart, { passive: false });
+            }
+
+            function dragStart(e) {
+                e.preventDefault();
+                if (e.target.closest('.triangle-wrapper')) {
+                    gameState.draggingElement = e.target.closest('.triangle-wrapper');
+                    gameState.draggingElement.classList.add('dragging');
+                    
+                    const rect = gameState.draggingElement.getBoundingClientRect();
+                    const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+
+                    gameState.offsetX = clientX - rect.left;
+                    gameState.offsetY = clientY - rect.top;
+
+                    document.addEventListener('mousemove', dragMove);
+                    document.addEventListener('mouseup', dragEnd);
+                    document.addEventListener('touchmove', dragMove, { passive: false });
+                    document.addEventListener('touchend', dragEnd);
+                }
+            }
+
+            function dragMove(e) {
+                if (!gameState.draggingElement) return;
+                e.preventDefault();
+                const boardRect = gameBoard.getBoundingClientRect();
+                const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+
+                let x = clientX - boardRect.left - gameState.offsetX;
+                let y = clientY - boardRect.top - gameState.offsetY;
+
+                gameState.draggingElement.style.left = `${x}px`;
+                gameState.draggingElement.style.top = `${y}px`;
+            }
+
+            function dragEnd(e) {
+                if (!gameState.draggingElement) return;
+                
+                const element = gameState.draggingElement;
+                element.classList.remove('dragging');
+
+                document.removeEventListener('mousemove', dragMove);
+                document.removeEventListener('mouseup', dragEnd);
+                document.removeEventListener('touchmove', dragMove);
+                document.removeEventListener('touchend', dragEnd);
+                
+                const elementRect = element.getBoundingClientRect();
+                let droppedInSlot = false;
+
+                comparisonSlots.forEach((slot, index) => {
+                    if (rectsOverlap(elementRect, slot.getBoundingClientRect()) && gameState.comparison[index] === null) {
+                        dropIntoSlot(element, slot, index);
+                        droppedInSlot = true;
+                    }
+                });
+
+                if (!droppedInSlot) {
+                    const triData = getTriangleById(parseInt(element.dataset.id));
+                    element.style.left = `${triData.x}px`;
+                    element.style.top = `${triData.y}px`;
+                }
+                
+                gameState.draggingElement = null;
+            }
+            
+            function dropIntoSlot(element, slot, index) {
+                const triId = parseInt(element.dataset.id);
+                gameState.comparison[index] = getTriangleById(triId);
+                slot.appendChild(element);
+                element.style.position = 'relative';
+                element.style.left = '50%';
+                element.style.top = '50%';
+                
+                const svgRect = element.firstChild.getBoundingClientRect();
+                element.style.transform = `translate(-50%, -50%) scale(${120/Math.max(svgRect.width, svgRect.height)})`;
+                element.style.cursor = 'default';
+                element.style.animation = 'none'; // Stop floating animation
+                slot.classList.add('filled');
+                element.removeEventListener('mousedown', dragStart);
+                element.removeEventListener('touchstart', dragStart);
+                
+                if (gameState.comparison[0] && gameState.comparison[1]) {
+                    checkSimilarity();
+                }
+            }
+
+            // --- Game Logic ---
+            function checkSimilarity() {
+                const [t1, t2] = gameState.comparison;
+                let isSimilar = false;
+
+                if(t1.pairId === t2.pairId && t1.pairId !== -1) {
+                    isSimilar = true;
+                }
+
+                if (isSimilar) {
+                    handleCorrectMatch();
+                } else {
+                    handleIncorrectMatch();
+                }
+            }
+
+            function handleCorrectMatch() {
+                updateScore(10);
+                showFeedback("CORRECT MATCH!", "success");
+                gameState.correctPairs++;
+
+                comparisonSlots.forEach(slot => {
+                    slot.classList.add('flash-green');
+                    setTimeout(() => {
+                        slot.classList.remove('flash-green');
+                        if (slot.firstChild) {
+                             // Find the wrapper in the main board and remove it
+                            const id = slot.firstChild.dataset.id;
+                            const mainBoardWrapper = gameBoard.querySelector(`.triangle-wrapper[data-id="${id}"]`);
+                            if(mainBoardWrapper) mainBoardWrapper.remove();
+                            // Clear from slot
+                            slot.innerHTML = '';
+                        }
+                    }, 700);
+                });
+                
+                revealPictureTile();
+
+                setTimeout(() => {
+                    resetComparison();
+                    if (gameState.correctPairs === gameState.totalPairs) {
+                        endLevel();
+                    }
+                }, 800);
+            }
+
+            function handleIncorrectMatch() {
+                updateScore(-5);
+                showFeedback("NOT A MATCH!", "error");
+                comparisonSlots.forEach(slot => slot.classList.add('shake'));
+                
+                setTimeout(() => {
+                    comparisonSlots.forEach(slot => slot.classList.remove('shake'));
+                    returnTrianglesToBoard();
+                    resetComparison();
+                }, 500);
+            }
+
+            function checkLevel0Answer(answer) {
+                const correctType = gameState.level0CurrentPair.type.toLowerCase().replace(/ /g, '-');
+                if (answer === correctType) {
+                    updateScore(10);
+                    showFeedback("CORRECT!", "success");
+                } else {
+                    updateScore(-5);
+                    showFeedback("INCORRECT", "error");
+                }
+                setTimeout(generateLevel0Pair, 1500);
+            }
+
+            function endLevel() {
+                const title = document.getElementById('end-level-title');
+                const message = document.getElementById('end-level-message');
+                title.textContent = `Level ${gameState.currentLevel} Complete!`;
+                message.textContent = `Excellent work, agent. Your final score is ${gameState.score}. Ready for the next challenge?`;
+                if(gameState.currentLevel === 3) {
+                    nextLevelBtn.style.display = 'none';
+                } else {
+                    nextLevelBtn.style.display = 'inline-block';
+                }
+                endLevelModal.classList.add('visible');
+            }
+
+
+            // --- UI Updates & Helpers ---
+
+            function updateScore(change) {
+                gameState.score += change;
+                scoreDisplay.textContent = gameState.score;
+            }
+
+            function showFeedback(message, type) {
+                const feedbackEl = gameBoard.querySelector('#feedback-message');
+                if (!feedbackEl) return;
+                feedbackEl.textContent = message;
+                feedbackEl.className = ``;
+                feedbackEl.classList.add(type, 'show');
+                setTimeout(() => feedbackEl.classList.remove('show'), 1500);
+            }
+
+            function revealPictureTile() {
+                const hiddenTiles = document.querySelectorAll('.picture-tile:not(.hidden)');
+                if (hiddenTiles.length > 0) {
+                    const tileToReveal = hiddenTiles[Math.floor(Math.random() * hiddenTiles.length)];
+                    tileToReveal.classList.add('hidden');
+                }
+            }
+            
+            function resetComparison() {
+                gameState.comparison = [null, null];
+                comparisonSlots.forEach(slot => {
+                    slot.innerHTML = '';
+                    slot.classList.remove('filled');
+                });
+            }
+
+            function returnTrianglesToBoard() {
+                gameState.comparison.forEach(tri => {
+                    if (tri) {
+                        const element = gameBoard.querySelector(`.triangle-wrapper[data-id="${tri.id}"]`) 
+                                      || document.createElement('div'); // Recreate if it was moved from board
+                        if(!element.parentElement) {
+                            element.classList.add('triangle-wrapper');
+                            element.dataset.id = tri.id;
+                            element.appendChild(createTriangleSVG(tri, 100));
+                            gameBoard.appendChild(element);
+                        }
+                        
+                        element.style.position = 'absolute';
+                        element.style.transform = 'translate(0,0) scale(1)';
+                        element.style.left = `${tri.x}px`;
+                        element.style.top = `${tri.y}px`;
+                        element.style.cursor = 'grab';
+                        element.style.animation = ''; // Restore animation
+                        addDragListeners(element);
+                    }
+                });
+            }
+
+            // --- Controls ---
+
+            function useHint() {
+                if (gameState.score < 2) {
+                    showFeedback("Not enough points for a hint!", "error");
+                    return;
+                }
+                updateScore(-2);
+
+                const boardTriangles = Array.from(gameBoard.querySelectorAll('.triangle-wrapper'));
+                const unpairedIds = new Set(boardTriangles.map(el => parseInt(el.dataset.id)));
+                
+                let foundPair = null;
+                for (const id1 of unpairedIds) {
+                    const tri1 = getTriangleById(id1);
+                    if (tri1.isDistractor) continue;
+                    
+                    for (const id2 of unpairedIds) {
+                        if (id1 === id2) continue;
+                        const tri2 = getTriangleById(id2);
+                        if (tri1.pairId === tri2.pairId) {
+                            foundPair = [tri1, tri2];
+                            break;
+                        }
+                    }
+                    if (foundPair) break;
+                }
+
+                if (foundPair) {
+                    const el1 = gameBoard.querySelector(`.triangle-wrapper[data-id="${foundPair[0].id}"]`);
+                    const el2 = gameBoard.querySelector(`.triangle-wrapper[data-id="${foundPair[1].id}"]`);
+                    dropIntoSlot(el1, comparisonSlots[0], 0);
+                    dropIntoSlot(el2, comparisonSlots[1], 1);
+                }
+            }
+
+            function revealAllAnswers() {
+                hintBtn.disabled = true;
+                revealBtn.disabled = true;
+
+                const boardTriangles = Array.from(gameBoard.querySelectorAll('.triangle-wrapper'));
+                const unpairedWrappers = boardTriangles.filter(el => {
+                    const id = parseInt(el.dataset.id);
+                    return !gameState.comparison.some(t => t && t.id === id);
+                });
+                
+                const pairs = {};
+                unpairedWrappers.forEach(el => {
+                    const tri = getTriangleById(parseInt(el.dataset.id));
+                    if(tri.isDistractor) {
+                        el.style.opacity = '0.3';
+                        el.style.animation = 'none';
+                    } else {
+                        if(!pairs[tri.pairId]) pairs[tri.pairId] = [];
+                        pairs[tri.pairId].push(el);
+                    }
+                });
+
+                Object.values(pairs).forEach((pairEls, index) => {
+                    const hue = (index * 60) % 360;
+                    const color = `hsl(${hue}, 100%, 70%)`;
+                    pairEls.forEach(el => {
+                        el.firstChild.querySelector('.triangle-path').style.stroke = color;
+                        el.style.boxShadow = `0 0 15px ${color}`;
+                        el.style.animation = 'none';
+                        el.removeEventListener('mousedown', dragStart);
+                        el.removeEventListener('touchstart', dragStart);
+                        el.style.cursor = 'default';
+                    });
+                });
+            }
+
+
+            // --- Utility Functions ---
+
+            function getTriangleById(id) {
+                return gameState.triangles.find(t => t.id === id);
+            }
+
+            function rectsOverlap(rect1, rect2) {
+                return !(rect1.right < rect2.left || 
+                         rect1.left > rect2.right || 
+                         rect1.bottom < rect2.top || 
+                         rect1.top > rect2.bottom);
+            }
+            
+            function rand(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+            
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+            
+            init();
+        });
+    </script>
+</body>
+</html>
+
